@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: local
     container_name: go_web_sample_app
     ports:
       - "8080:8080"
@@ -22,6 +23,9 @@ services:
       - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
     volumes:
       - ./data:/data
+      - .:/app
+      - /app/tmp
+      - /app/vendor
     depends_on:
       - redis
     restart: unless-stopped

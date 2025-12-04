@@ -41,6 +41,10 @@ Thumbs.db
 # Logs
 *.log
 logs/
+build-errors.log
+
+# Air
+tmp/
 
 # Build output
 dist/

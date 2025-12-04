@@ -11,11 +11,21 @@ ECS_SERVICE_NAME="go-web-sample-service"
 ECS_TASK_DEFINITION_FAMILY="go-web-sample"
 IMAGE_TAG=${IMAGE_TAG:-latest}
 
+# 環境ステージ（dev または prd）
+ENV_STAGE=${ENV_STAGE:-prd}
+
+# ステージの検証
+if [ "$ENV_STAGE" != "dev" ] && [ "$ENV_STAGE" != "prd" ]; then
+  echo "エラー: ENV_STAGEは 'dev' または 'prd' である必要があります"
+  exit 1
+fi
+
 echo "=== ECS Fargate デプロイスクリプト ==="
 echo "Region: $AWS_REGION"
 echo "Account ID: $AWS_ACCOUNT_ID"
 echo "Repository: $ECR_REPOSITORY_NAME"
 echo "Image Tag: $IMAGE_TAG"
+echo "Environment Stage: $ENV_STAGE"
 echo ""
 
 # ECRリポジトリURI
@@ -25,9 +35,9 @@ ECR_REPOSITORY_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_
 echo "1. ECRにログイン中..."
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
 
-# 2. 本番用Dockerfileでイメージをビルド
-echo "2. Dockerイメージをビルド中..."
-docker build -f deploy/Dockerfile.prod -t ${ECR_REPOSITORY_NAME}:${IMAGE_TAG} .
+# 2. 環境ステージに応じたDockerイメージをビルド
+echo "2. Dockerイメージをビルド中（ステージ: $ENV_STAGE）..."
+docker build --target ${ENV_STAGE} -f Dockerfile -t ${ECR_REPOSITORY_NAME}:${IMAGE_TAG} .
 
 # 3. イメージにタグを付与
 echo "3. イメージにタグを付与中..."

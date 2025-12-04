@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"go_web_sample/internal/config"
+	"go_web_sample/internal/handler"
 	"go_web_sample/pkg/redis"
 
 	"github.com/labstack/echo/v4"
@@ -47,7 +49,7 @@ func main() {
 	}))
 
 	// ルーティング設定
-	setupRoutes(e)
+	setupRoutes(e, cfg)
 
 	// サーバー起動
 	serverAddr := fmt.Sprintf(":%s", cfg.Server.Port)
@@ -60,12 +62,16 @@ func main() {
 		}
 	}()
 
-	// シグナル待機
+	// シグナル待機（SIGINTとSIGTERMを受け付ける）
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	fmt.Println("Shutting down server...")
+
+	// 環境変数からタイムアウト時間を取得
+	shutdownTimeout := time.Duration(cfg.Server.ShutdownTimeout) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	if err := e.Shutdown(ctx); err != nil {
@@ -76,7 +82,7 @@ func main() {
 }
 
 // setupRoutes ルーティングを設定
-func setupRoutes(e *echo.Echo) {
+func setupRoutes(e *echo.Echo, cfg *config.Config) {
 	// ヘルスチェックエンドポイント
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
@@ -85,11 +91,9 @@ func setupRoutes(e *echo.Echo) {
 	})
 
 	// HelloWorldエンドポイント
-	e.GET("/hello", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{
-			"message": "HelloWorld",
-		})
-	})
+	// リクエストごとのタイムアウトを環境変数から取得
+	requestTimeout := time.Duration(cfg.Server.RequestTimeout) * time.Second
+	e.GET("/hello", handler.HelloWorld(requestTimeout, "DefaultUser", 1))
 
 	// API v1
 	api := e.Group("/api/v1")

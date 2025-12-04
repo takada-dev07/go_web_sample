@@ -2,6 +2,15 @@
 
 このディレクトリには、AWS ECS Fargateにアプリケーションをデプロイするためのファイルが含まれています。
 
+## 環境ステージについて
+
+Dockerfileは以下のステージを提供しています：
+
+- **dev**: 開発環境用（Alpine Linuxベース、デバッグツール付き、ヘルスチェック対応）
+- **prd**: 本番環境用（scratchベース、最小イメージ、最適化済み）
+
+デプロイスクリプトは `ENV_STAGE` 環境変数でステージを選択します。
+
 ## 前提条件
 
 - AWS CLIがインストール・設定されていること
@@ -96,12 +105,14 @@ aws logs create-log-group \
 ### 7. デプロイスクリプトの実行
 
 ```bash
-# 環境変数でイメージタグを指定（オプション）
-export IMAGE_TAG=v1.0.0
+# 開発環境にデプロイ
+ENV_STAGE=dev IMAGE_TAG=v1.0.0-dev ./deploy/deploy.sh
 
-# デプロイスクリプトを実行
-./deploy/deploy.sh
+# 本番環境にデプロイ
+ENV_STAGE=prd IMAGE_TAG=v1.0.0 ./deploy/deploy.sh
 ```
+
+**注意**: `ENV_STAGE` を指定しない場合、デフォルトで `prd` が使用されます。
 
 ## ECSサービスの作成（初回のみ）
 

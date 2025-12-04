@@ -19,8 +19,10 @@ type Config struct {
 
 // ServerConfig サーバー設定
 type ServerConfig struct {
-	Port string
-	Env  string
+	Port            string
+	Env             string
+	ShutdownTimeout int // 秒単位
+	RequestTimeout  int // 秒単位（リクエストごとのタイムアウト）
 }
 
 // DatabaseConfig データベース設定
@@ -55,8 +57,10 @@ func Load() (*Config, error) {
 
 	config := &Config{
 		Server: ServerConfig{
-			Port: getEnv("PORT", "8080"),
-			Env:  getEnv("ENV", "development"),
+			Port:            getEnv("PORT", "8080"),
+			Env:             getEnv("ENV", "development"),
+			ShutdownTimeout: getEnvAsInt("SHUTDOWN_TIMEOUT_SECONDS", 10),
+			RequestTimeout:  getEnvAsInt("REQUEST_TIMEOUT_SECONDS", 30),
 		},
 		Database: DatabaseConfig{
 			Type: getEnv("DB_TYPE", "sqlite"),
