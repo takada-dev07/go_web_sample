@@ -12,6 +12,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Redis    RedisConfig
 	JWT      JWTConfig
 	CORS     CORSConfig
 }
@@ -34,6 +35,14 @@ type JWTConfig struct {
 	ExpirationHours int
 }
 
+// RedisConfig Redis設定
+type RedisConfig struct {
+	Host     string
+	Port     string
+	Password string
+	DB       int
+}
+
 // CORSConfig CORS設定
 type CORSConfig struct {
 	AllowedOrigins []string
@@ -52,6 +61,12 @@ func Load() (*Config, error) {
 		Database: DatabaseConfig{
 			Type: getEnv("DB_TYPE", "sqlite"),
 			Path: getEnv("DB_PATH", "./data/app.db"),
+		},
+		Redis: RedisConfig{
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnv("REDIS_PORT", "6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvAsInt("REDIS_DB", 0),
 		},
 		JWT: JWTConfig{
 			Secret:          getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
@@ -118,4 +133,3 @@ func getEnvAsSlice(key string, defaultValue []string) []string {
 	}
 	return result
 }
-

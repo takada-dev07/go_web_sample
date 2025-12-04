@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go_web_sample/internal/config"
+	"go_web_sample/pkg/redis"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -20,6 +21,15 @@ func main() {
 	if err != nil {
 		fmt.Printf("Failed to load config: %v\n", err)
 		os.Exit(1)
+	}
+
+	// Redis接続を初期化
+	if err := redis.Init(&cfg.Redis); err != nil {
+		fmt.Printf("Failed to initialize Redis: %v\n", err)
+		// Redis接続失敗時もサーバーは起動（オプショナル）
+	} else {
+		fmt.Println("Redis connected successfully")
+		defer redis.Close()
 	}
 
 	// Echoインスタンスを作成
@@ -74,6 +84,13 @@ func setupRoutes(e *echo.Echo) {
 		})
 	})
 
+	// HelloWorldエンドポイント
+	e.GET("/hello", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "HelloWorld",
+		})
+	})
+
 	// API v1
 	api := e.Group("/api/v1")
 	{
@@ -84,4 +101,3 @@ func setupRoutes(e *echo.Echo) {
 		})
 	}
 }
-
