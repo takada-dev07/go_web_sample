@@ -55,6 +55,10 @@ func main() {
 	serverAddr := fmt.Sprintf(":%s", cfg.Server.Port)
 	fmt.Printf("Server starting on %s (env: %s)\n", serverAddr, cfg.Server.Env)
 
+	// シグナル受信を検知するためのcontextを作成
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	// グレースフルシャットダウン
 	go func() {
 		if err := e.Start(serverAddr); err != nil && err != http.ErrServerClosed {
@@ -62,19 +66,17 @@ func main() {
 		}
 	}()
 
-	// シグナル待機（SIGINTとSIGTERMを受け付ける）
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
+	// シグナル受信を待機
+	<-ctx.Done()
 
 	fmt.Println("Shutting down server...")
 
 	// 環境変数からタイムアウト時間を取得
 	shutdownTimeout := time.Duration(cfg.Server.ShutdownTimeout) * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	if err := e.Shutdown(ctx); err != nil {
+	if err := e.Shutdown(shutdownCtx); err != nil {
 		e.Logger.Fatal(err)
 	}
 
@@ -103,5 +105,6 @@ func setupRoutes(e *echo.Echo, cfg *config.Config) {
 				"message": "Go Web API v1",
 			})
 		})
+		api.POST("/tasks", handler.AddTask)
 	}
 }

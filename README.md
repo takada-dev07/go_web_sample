@@ -9,6 +9,7 @@ Echoフレームワークを使用したGo Webアプリケーションのサン�
 - Redisキャッシュ
 - JWT認証・認可
 - CORS設定
+- グレースフルシャットダウン（SIGINT/SIGTERM対応）
 - Dockerコンテナ対応
 - AWS ECS Fargateデプロイ対応
 
@@ -149,6 +150,15 @@ go build -o bin/server ./cmd/server
 ```bash
 go test ./...
 ```
+
+### グレースフルシャットダウン
+
+サーバーは `signal.NotifyContext` を使用してシグナル（SIGINT、SIGTERM）を受信すると、グレースフルシャットダウンを実行します。
+
+- **SIGINT**（Ctrl+C）: ローカル開発時に手動で停止する場合
+- **SIGTERM**: DockerコンテナやECSなどのコンテナ環境で停止シグナルとして送信される場合
+
+シャットダウン時のタイムアウトは `SHUTDOWN_TIMEOUT_SECONDS` 環境変数で設定できます（デフォルト: 10秒）。
 
 ## Docker コマンド一覧
 
